@@ -10,6 +10,7 @@ import { getArea, getLength } from 'ol/sphere';
 import Geometry from 'ol/geom/Geometry';
 
 const MapComponent: React.FC = () => {
+  // State variables
   const [measurement, setMeasurement] = useState<string | null>(null);
   const [drawType, setDrawType] = useState<string>('Point');
   const [activeDrawType, setActiveDrawType] = useState<string>('Point');
@@ -17,8 +18,10 @@ const MapComponent: React.FC = () => {
   const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Initialize OpenLayers map when component mounts
     if (!mapRef.current) return;
 
+    // Create a new OpenLayers map instance
     const mapInstance = new Map({
       target: mapRef.current,
       layers: [
@@ -32,8 +35,10 @@ const MapComponent: React.FC = () => {
       }),
     });
 
+    // Set the map instance to state
     setOlMap(mapInstance);
 
+    // Create an overlay for pinpointing coordinates
     const pinpointOverlay = new Overlay({
       position: undefined,
       element: document.createElement('div'),
@@ -41,6 +46,7 @@ const MapComponent: React.FC = () => {
 
     mapInstance.addOverlay(pinpointOverlay);
 
+    // Create a pointer interaction to handle clicks on the map
     const pointerInteraction = new Pointer({
       handleDownEvent: (event) => {
         const coords = mapInstance.getEventCoordinate(event.originalEvent);
@@ -51,6 +57,7 @@ const MapComponent: React.FC = () => {
 
     mapInstance.addInteraction(pointerInteraction);
 
+    // Create a vector source and layer for drawn features
     const vectorSource = new VectorSource();
     const vectorLayer = new VectorLayer({
       source: vectorSource,
@@ -60,6 +67,7 @@ const MapComponent: React.FC = () => {
 
     let drawInteraction: Draw;
 
+    // Function to update the draw interaction based on selected draw type
     const updateDrawInteraction = () => {
       mapInstance.removeInteraction(drawInteraction);
       
@@ -85,6 +93,7 @@ const MapComponent: React.FC = () => {
 
       mapInstance.addInteraction(drawInteraction);
 
+      // Handle 'drawend' event to calculate and display measurements
       drawInteraction.on('drawend', (event) => {
         const feature = event.feature;
         const geometry: Geometry | undefined = feature.getGeometry();
@@ -105,6 +114,7 @@ const MapComponent: React.FC = () => {
     
     updateDrawInteraction();
 
+    // Cleanup function to remove overlays and interactions
     return () => {
       mapInstance.removeOverlay(pinpointOverlay);
       mapInstance.removeInteraction(pointerInteraction);
@@ -113,12 +123,14 @@ const MapComponent: React.FC = () => {
     };
   }, [drawType]);
 
+  // Function to handle changing the draw type
   const handleDrawTypeChange = (type: string) => {
     setDrawType(type);
     setActiveDrawType(type);
     setMeasurement(null); // Reset measurement when changing draw type
   };
 
+  // Function to clear drawn features from the map
   const clearDrawnFeatures = () => {
     if (olMap) {
       const layers = olMap.getLayers().getArray();
@@ -139,13 +151,16 @@ const MapComponent: React.FC = () => {
     }
   };
 
+  // Render the component
   return (
     <div>
       <div className="header">
         <h1>Map</h1>
       </div>
       <div className="map-container">
+        {/* OpenLayers map container */}
         <div ref={mapRef} style={{ width: '100%', height: '400px' }} className='mapp'></div>
+        {/* Draw buttons */}
         <div className="button-container">
           <button 
             className={activeDrawType === 'Point' ? 'active-button' : ''}
@@ -165,8 +180,10 @@ const MapComponent: React.FC = () => {
           >
             Draw Polygon
           </button>
+          {/* Button to clear drawn features */}
           <button onClick={clearDrawnFeatures}>Clear Drawings</button>
         </div>
+        {/* Measurement display */}
         {measurement && <div className="measurement">{measurement}</div>}
       </div>
     </div>
